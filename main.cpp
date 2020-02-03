@@ -27,24 +27,21 @@ std::vector<string> split_string(string &str) {
     return seglist;
 }
 
+// Create vector lookup table for ppm file
 std::vector<int> ppm_to_vector(int &nx, int &ny, ifstream &in, int &offset) {
     std::vector<int> img_vec;
     string s;
-    int z;
 
     for (int i = 0; i < offset-1; i++) {
         getline(in, s);
     }
 
     for (int i = 0; i < (nx * ny); i++) {
-        // if (i % 100 == 0) {
-        //     fprintf(stderr,"\rVectorizing image: %5.2f%%", double(100.0 * i / (nx * ny)));
-        // }
+        if (i % 100 == 0) {
+            fprintf(stderr,"\rVectorizing image: %5.2f%%", double(100.0 * i / (nx * ny)));
+        }
         getline(in, s);
-        // cout << "A" << std::endl;
-        z = std::stoi(s);
-        // cout << "B" << std::endl;
-        img_vec.push_back(z);
+        img_vec.push_back(std::stoi(s));
     }
 
     return img_vec;
@@ -189,8 +186,8 @@ int main(int argc, char** argv) {
     }
 
     // Input image information
-    int nx = 200;
-    int ny = 100;
+    int nx = 2560;
+    int ny = 1600;
 
     // Create input stream for source
     ifstream src1(input_img, std::ios::binary);
