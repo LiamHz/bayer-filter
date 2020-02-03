@@ -13,10 +13,6 @@ using std::ofstream;
 using std::ifstream;
 using std::stringstream;
 
-// int bayer_filter(int &x, int &y) {
-
-// }
-
 // Split a string into its words
 std::vector<string> split_string(string &str) {
     stringstream strm(str);
@@ -41,6 +37,19 @@ string get_line_n(ifstream &in, int n) {
     }
 
     return s;
+}
+
+std::vector<int> ppm_to_vector(int &nx, int &ny, ifstream &in, int &offset) {
+    std::vector<int> img_vector;
+
+    for (int i = 0; i < (nx * ny); i++) {
+        if (i % 100 == 0) {
+            fprintf(stderr,"\rVectorizing image: %5.2f%%", double(100.0 * i / (nx * ny)));
+        }
+        img_vector.push_back(std::stoi(get_line_n(in, i+offset)));
+    }
+
+    return img_vector;
 }
 
 int bayer_filter(int &nx, int &ny, ifstream &src, string &outname) {
@@ -88,20 +97,20 @@ int bayer_filter(int &nx, int &ny, ifstream &src, string &outname) {
     return 0;
 }
 
-int* get_neighbor_pixels(int &nx, int &ny, int &current_pos, ifstream &src) {
+int* get_neighbor_pixels(int &nx, int &ny, int &current_pos, ifstream &src, std::vector<int> &img_vec) {
     static int pixels[6];
 
     // Get up + down neightbors
-    pixels[0] = std::stoi(get_line_n(src, current_pos - nx));
-    pixels[1] = std::stoi(get_line_n(src, current_pos + nx));
+    pixels[0] = img_vec[current_pos - nx];
+    pixels[1] = img_vec[current_pos + nx];
 
     // Get left + right neightbors
-    pixels[2] = std::stoi(get_line_n(src, current_pos - 1));
-    pixels[3] = std::stoi(get_line_n(src, current_pos + 1));
+    pixels[2] = img_vec[current_pos - 1];
+    pixels[3] = img_vec[current_pos + 1];
 
     // Get diagonal neighbors (top_left + bottom_right)
-    pixels[4] = std::stoi(get_line_n(src, current_pos - nx - 1));
-    pixels[5] = std::stoi(get_line_n(src, current_pos + nx + 1));
+    pixels[4] = img_vec[current_pos - nx - 1];
+    pixels[5] = img_vec[current_pos + nx + 1];
 
     return pixels;
 }
@@ -111,14 +120,16 @@ int demosaic(int &nx, int &ny, ifstream &src, string &outname) {
     ofstream ofs;
     ofs.open(outname);
 
-    // P5 is for color
-    ofs << "P5\n" << nx << " " << ny << "\n255\n";
+    // P3 is for color
+    ofs << "P3\n" << nx << " " << ny << "\n255\n";
 
     // For parsing src
     string line;
 
     // Ignore the first 3 lines of the ppm file
     int offset = 3;
+
+    std::vector<int> img_vec = ppm_to_vector(nx, ny, src, offset);
 
     for (int y = ny-1; y >= 0; y--) {
         // if (y % 5 == 0){
@@ -128,18 +139,15 @@ int demosaic(int &nx, int &ny, ifstream &src, string &outname) {
         for (int x = 0; x < nx; x++) {
             // Store current position and pixel
             int current_pos = x + (nx * (y_pos - 1)) + offset;
-            int current_pixel_val;
-            string pos_val;
-            pos_val = get_line_n(src, current_pos);
-            current_pixel_val = std::stoi(pos_val);
+            int current_pixel_val = img_vec[current_pos];
 
-            // TODO Add functionality for edge pixels
+            // Don't apply filter to edge pixels
             if (x == 0 || x == nx - 1 || y == 0 || y == ny - 1) {
                 ofs << "0 0 0\n";
             }
             else {
                 // Get neighbor pixels and their averages
-                int* np = get_neighbor_pixels(nx, ny, current_pos, src);
+                int* np = get_neighbor_pixels(nx, ny, current_pos, src, img_vec);
                 int up_down_avg = static_cast<int>((np[0] + np[1]) / 2);
                 int left_right_avg = static_cast<int>((np[2] + np[3]) / 2);
                 int diag_avg = static_cast<int>((np[4] + np[5]) / 2);
@@ -164,6 +172,7 @@ int demosaic(int &nx, int &ny, ifstream &src, string &outname) {
         }
     }
     ofs.close();
+
     return 0;
 }
 
