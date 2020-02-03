@@ -52,8 +52,8 @@ int main(int argc, char** argv) {
     ofstream ofs;
     ofs.open("./bayer.ppm");
 
-    // P5 is for grayscale
-    ofs << "P5\n" << nx << " " << ny << "\n255\n";
+    // P2 is for grayscale
+    ofs << "P2\n" << nx << " " << ny << "\n255\n";
 
     // For parsing src
     string line;
