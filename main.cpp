@@ -27,29 +27,27 @@ std::vector<string> split_string(string &str) {
     return seglist;
 }
 
-string get_line_n(ifstream &in, int n) {
+std::vector<int> ppm_to_vector(int &nx, int &ny, ifstream &in, int &offset) {
+    std::vector<int> img_vec;
     string s;
-    s.reserve(32);
-    in.seekg(0);
+    int z;
 
-    for (int i = 0; i < n; i++) {
+    for (int i = 0; i < offset-1; i++) {
         getline(in, s);
     }
 
-    return s;
-}
-
-std::vector<int> ppm_to_vector(int &nx, int &ny, ifstream &in, int &offset) {
-    std::vector<int> img_vector;
-
     for (int i = 0; i < (nx * ny); i++) {
-        if (i % 100 == 0) {
-            fprintf(stderr,"\rVectorizing image: %5.2f%%", double(100.0 * i / (nx * ny)));
-        }
-        img_vector.push_back(std::stoi(get_line_n(in, i+offset)));
+        // if (i % 100 == 0) {
+        //     fprintf(stderr,"\rVectorizing image: %5.2f%%", double(100.0 * i / (nx * ny)));
+        // }
+        getline(in, s);
+        // cout << "A" << std::endl;
+        z = std::stoi(s);
+        // cout << "B" << std::endl;
+        img_vec.push_back(z);
     }
 
-    return img_vector;
+    return img_vec;
 }
 
 int bayer_filter(int &nx, int &ny, ifstream &src, string &outname) {
@@ -200,7 +198,7 @@ int main(int argc, char** argv) {
     bayer_filter(nx, ny, src1, output_bayer);
     src1.close();
 
-    // // Create input stream for intermediate
+    // Create input stream for intermediate
     ifstream src2(output_bayer, std::ios::binary);
 
     demosaic(nx, ny, src2, output_demosaic);
